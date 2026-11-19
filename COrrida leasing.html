@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corrida de leasing iPhone 18</title>
+<style>
+:root{
+  --text-primary:#1f1f1e;--text-secondary:#5f5e5a;--text-success:#27500a;--text-danger:#a32d2d;
+  --surface-1:#f7f6f2;--surface-2:#ffffff;--bg-neutral:#f1efe8;
+  --border:rgba(0,0,0,.12);--border-strong:rgba(0,0,0,.3);--radius:8px;
+}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--surface-1);color:var(--text-primary);margin:0;padding:16px}
+.wrap{max-width:520px;margin:0 auto}
+h1{font-size:20px;font-weight:500;margin:0 0 4px}
+.sub{font-size:13px;color:var(--text-secondary);margin:0 0 12px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.lb{font-size:12px;color:var(--text-secondary);display:block;margin-bottom:4px}
+.card{background:var(--surface-2);border:.5px solid var(--border);border-radius:12px;padding:12px;margin-top:12px}
+.m{background:var(--bg-neutral);border-radius:var(--radius);padding:8px 10px}
+.k{font-size:12px;color:var(--text-secondary)}
+.v{font-size:18px;font-weight:500}
+.h{font-size:14px;font-weight:500;margin:0}
+input,select{width:100%;height:36px;font-size:14px;padding:0 8px;border:.5px solid var(--border-strong);border-radius:var(--radius);background:var(--surface-2);color:var(--text-primary)}
+.t{width:100%;table-layout:fixed;font-size:13px;border-collapse:collapse}
+.t td,.t th{padding:6px 3px;text-align:right;font-weight:400;vertical-align:middle}
+.t th{font-size:12px;color:var(--text-secondary)}
+.t td:first-child,.t th:first-child{text-align:left}
+.t input{height:30px;font-size:13px;padding:0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Corrida de leasing iPhone 18</h1>
+<p class="sub">Precios de lista en México, 256 GB. Cambia los supuestos para recalcular.</p>
+
+<div class="card" style="margin-top:0">
+<p class="h" style="margin-bottom:10px">Supuestos generales</p>
+<div class="g2">
+<div><label class="lb">Perfil de cliente</label><select id="seg"><option value="con">Consumidor (con IVA)</option><option value="emp">Empresa (sin IVA)</option></select></div>
+<div><label class="lb">Plazo (meses)</label><select id="term"><option>12</option><option>18</option><option selected>24</option><option>36</option></select></div>
+<div><label class="lb">Tasa anual (%)</label><input type="number" id="rate" value="24" step="0.5" inputmode="decimal"></div>
+<div><label class="lb">Comisión apertura (%)</label><input type="number" id="fee" value="0" step="0.5" inputmode="decimal"></div>
+<div><label class="lb">Seguro mensual ($)</label><input type="number" id="ins" value="0" step="10" inputmode="decimal"></div>
+<div><label class="lb">Moneda</label><div class="m" style="height:36px;display:flex;align-items:center"><span id="ivaNote" class="k">Montos con IVA</span></div></div>
+</div>
+</div>
+
+<div id="cards"></div>
+
+<div class="card">
+<p class="h" style="margin-bottom:2px">Comparación con el mercado</p>
+<p class="k" style="margin:0 0 8px">Renta mensual. Captura en "Otra oferta" la renta de Telcel u otro competidor (con IVA).</p>
+<table class="t">
+<colgroup><col style="width:28%"><col style="width:24%"><col style="width:24%"><col style="width:24%"></colgroup>
+<thead><tr><th>Modelo</th><th>Tu renta</th><th>Apple 18 MSI</th><th>Otra oferta</th></tr></thead>
+<tbody id="cmp"></tbody>
+</table>
+</div>
+</div>
+
+<script>
+const M=[
+  {n:'18 Pro',s:'iPhone 18 Pro 256 GB',p:29999,r:40},
+  {n:'18 Pro Max',s:'iPhone 18 Pro Max 256 GB',p:31999,r:40},
+  {n:'Duo',s:'iPhone Duo 256 GB',p:47999,r:35}
+];
+const $=id=>document.getElementById(id);
+const f=x=>isFinite(x)?'$'+Math.round(x).toLocaleString('es-MX'):'—';
+const num=id=>parseFloat($(id).value)||0;
+let h='',c='';
+M.forEach((m,i)=>{
+h+='<div class="card"><p class="h" style="margin-bottom:10px">'+m.s+'</p><div class="g2">'
++'<div><label class="lb">Precio de lista ($)</label><input type="number" id="p'+i+'" value="'+m.p+'" inputmode="decimal"></div>'
++'<div><label class="lb">Residual (% precio)</label><input type="number" id="r'+i+'" value="'+m.r+'" step="1" inputmode="decimal"></div>'
++'<div><label class="lb">Reventa mes N (% precio)</label><input type="number" id="v'+i+'" value="'+m.r+'" step="1" inputmode="decimal"></div>'
++'<div><label class="lb">Pago inicial</label><div class="m" style="height:36px;display:flex;align-items:center"><span id="fe'+i+'" style="font-size:14px;font-weight:500"></span></div></div>'
++'</div><div class="g2" style="margin-top:10px">'
++'<div class="m"><div class="k">Renta mensual</div><div class="v" id="rt'+i+'"></div></div>'
++'<div class="m"><div class="k">Valor residual</div><div class="v" id="vr'+i+'"></div></div>'
++'<div class="m"><div class="k">Total si devuelve</div><div class="v" id="td'+i+'"></div></div>'
++'<div class="m"><div class="k">Total si se queda</div><div class="v" id="tc'+i+'"></div></div>'
++'</div><div class="m" style="margin-top:10px"><div class="k">Resultado por equipo devuelto (reventa menos residual)</div><div class="v" id="gn'+i+'"></div></div></div>';
+c+='<tr><td>'+m.n+'</td><td id="mr'+i+'" style="font-weight:500"></td><td id="ma'+i+'"></td><td><input type="number" id="o'+i+'" placeholder="—" inputmode="decimal"></td></tr>'
++'<tr><td colspan="4" id="df'+i+'" style="text-align:left;font-size:12px;color:var(--text-secondary);padding-top:0;padding-bottom:8px"></td></tr>';
+});
+$('cards').innerHTML=h;$('cmp').innerHTML=c;
+
+function pmt(P,VR,rm,n){
+  if(rm===0)return(P-VR)/n;
+  const q=Math.pow(1+rm,n);
+  return(P-VR/q)*rm/(1-1/q);
+}
+function pct(a,b){
+  if(!isFinite(a)||!isFinite(b)||b<=0)return null;
+  return Math.round((a/b-1)*100);
+}
+function txt(label,d){
+  if(d===null)return label+': —';
+  return label+': '+(d<=0?Math.abs(d)+'% menor':d+'% mayor');
+}
+function calc(){
+  const rate=num('rate'),n=parseInt($('term').value),fee=num('fee'),ins=num('ins');
+  const emp=$('seg').value==='emp',k=emp?1/1.16:1;
+  $('ivaNote').textContent=emp?'Montos sin IVA':'Montos con IVA';
+  M.forEach((m,i)=>{
+    const P=num('p'+i),VR=P*num('r'+i)/100,rev=P*num('v'+i)/100;
+    const rent=(pmt(P,VR,rate/1200,n)+ins)*k,fe=P*fee/100*k;
+    $('fe'+i).textContent=f(fe);
+    $('rt'+i).textContent=f(rent);
+    $('vr'+i).textContent=f(VR*k);
+    $('td'+i).textContent=f(rent*n+fe);
+    $('tc'+i).textContent=f(rent*n+fe+VR*k);
+    const g=(rev-VR)*k,el=$('gn'+i);
+    el.textContent=(g>0?'+':g<0?'−':'')+f(Math.abs(g));
+    el.style.color=g>0?'var(--text-success)':g<0?'var(--text-danger)':'var(--text-primary)';
+    const ap=P/18*k,ot=parseFloat($('o'+i).value),otk=isFinite(ot)?ot*k:NaN;
+    $('mr'+i).textContent=f(rent);
+    $('ma'+i).textContent=f(ap);
+    $('df'+i).textContent=txt('vs Apple',pct(rent,ap))+'  ·  '+txt('vs otra',pct(rent,otk));
+  });
+}
+document.querySelectorAll('input,select').forEach(e=>{
+  e.addEventListener('input',calc);
+  e.addEventListener('change',calc);
+});
+calc();
+</script>
+</body>
+</html>
